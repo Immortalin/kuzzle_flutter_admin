@@ -15,7 +15,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  kuzzle_dart:
+  kuzzle:
     path: ../kuzzle_dart
     # git: git://github.com/prijindal/kuzzle_dart
 

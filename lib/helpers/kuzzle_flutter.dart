@@ -1,26 +1,26 @@
 import 'package:flutter/widgets.dart';
-import 'package:kuzzle_dart/kuzzle_dart.dart';
+import 'package:kuzzle/kuzzle_dart.dart';
 
-class KuzzleFlutter {
-  KuzzleFlutter(this.kuzzle) {
-    instance = this;
-  }
+class KuzzleFlutter extends Kuzzle {
+  KuzzleFlutter(String host, {@required String defaultIndex})
+      : super(host, defaultIndex: defaultIndex);
 
   /// Application level instance which can be called
   /// from anywhere in the app and directly used
   static KuzzleFlutter instance;
-
-  final Kuzzle kuzzle;
 }
 
 class KuzzleApp extends StatefulWidget {
+  /// It initalizes the instance with the passed [Kuzzle] object
+  ///
+  /// This instance can be accessed anywhere with [KuzzleFlutter.instance]
   const KuzzleApp({
     @required this.kuzzle,
     @required this.child,
     Key key,
   }) : super(key: key);
 
-  final Kuzzle kuzzle;
+  final KuzzleFlutter kuzzle;
   final Widget child;
 
   @override
@@ -30,7 +30,7 @@ class KuzzleApp extends StatefulWidget {
 class KuzzleAppState extends State<KuzzleApp> {
   @override
   void initState() {
-    KuzzleFlutter.instance = KuzzleFlutter(widget.kuzzle);
+    KuzzleFlutter.instance = widget.kuzzle;
     super.initState();
   }
 
@@ -41,9 +41,9 @@ class KuzzleAppState extends State<KuzzleApp> {
 class KuzzleContainer extends StatelessWidget {
   const KuzzleContainer({this.builder}) : super();
 
-  final Widget Function(BuildContext context, Kuzzle kuzzle) builder;
+  final Widget Function(BuildContext context, KuzzleFlutter kuzzle) builder;
 
   @override
   Widget build(BuildContext context) =>
-      builder(context, KuzzleFlutter.instance.kuzzle);
+      builder(context, KuzzleFlutter.instance);
 }
