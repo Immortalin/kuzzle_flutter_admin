@@ -1,62 +1,65 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:kuzzle/kuzzle_dart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app/root.dart';
+import 'components/loading.dart';
 import 'helpers/kuzzle_flutter.dart';
+import 'models/server.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(App());
 
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+class App extends StatefulWidget {
   @override
-  Widget build(BuildContext context) => KuzzleApp(
-        kuzzle: KuzzleFlutter('192.168.1.6', defaultIndex: 'testfromflutter'),
-        child: RootContainer(),
-      );
+  _AppState createState() => _AppState();
 }
 
-class RootContainer extends StatefulWidget {
-  @override
-  RootContainerState createState() => RootContainerState();
-}
+class _AppState extends State<App> {
+  List<Server> servers;
+  SharedPreferences sharedPreferences;
 
-class RootContainerState extends State<RootContainer> {
-  String _error;
-  bool isLoading = true;
   @override
   void initState() {
     super.initState();
-    tryConnect();
+    getServers();
   }
 
-  Future<void> tryConnect() async {
-    setState(() {
-      isLoading = true;
-    });
+  Future<void> getServers() async {
+    sharedPreferences = await SharedPreferences.getInstance();
     try {
-      await KuzzleFlutter.instance.connect();
-      await KuzzleFlutter.instance.getServerInfo();
-    } catch (e) {
-      if (e == null || e.toString() == null) {
-        setState(() {
-          _error = 'Some unknown error occured';
-        });
-      } else {
-        if (e is ResponseError || e is WebSocketChannelException) {
-          setState(() {
-            _error = e.message;
-          });
-        } else {
-          setState(() {
-            _error = e.toString();
-          });
-        }
-      }
-    } finally {
+      final serverInString = sharedPreferences.get('servers');
+      final serversDynamic = json.decode(serverInString);
+      final servers = serversDynamic
+          .map<Server>((server) => Server.fromMap(server))
+          .toList();
       setState(() {
-        isLoading = false;
+        this.servers = servers;
+      });
+    } catch (e) {
+      print(e);
+      setState(() {
+        servers = [];
       });
     }
+  }
+
+  Future<void> saveServers() async {
+    sharedPreferences.setString('servers',
+        json.encode(servers.map((server) => server.toMap()).toList()));
+  }
+
+  void onSave(Server server) {
+    setState(() {
+      servers.add(server);
+    });
+    saveServers();
+  }
+
+  void onDelete(Server server) {
+    setState(() {
+      servers.remove(server);
+    });
+    saveServers();
   }
 
   @override
@@ -65,131 +68,136 @@ class RootContainerState extends State<RootContainer> {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: isLoading
+        home: servers == null
             ? LoadingPage()
-            : (_error == null ? MyHomePage() : ErrorPage(_error)),
+            : Container(
+                child: servers.isEmpty
+                    ? NewServerPage(onSave)
+                    : ServersListPage(
+                        servers,
+                        onDelete,
+                        onSaveCallback: onSave,
+                      ),
+              ),
       );
 }
 
-class LoadingPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const <Widget>[
-              Text('Loading'),
-            ],
-          ),
-        ),
-      );
-}
+class NewServerPage extends StatelessWidget {
+  NewServerPage(this.onSaveCallback);
 
-class ErrorPage extends StatelessWidget {
-  const ErrorPage(this.error);
-  final String error;
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Text(error == null ? '' : error),
-            ],
-          ),
-        ),
-      );
-}
+  final void Function(Server) onSaveCallback;
 
-class Post extends Object {
-  Post.fromDocument(Document document) : title = document.content['title'];
-
-  final String title;
-}
-
-class MyHomePage extends StatefulWidget {
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  List<Post> documents = [];
-  Collection collection;
-  Room room;
-
-  @override
-  void initState() {
-    super.initState();
-    getData().catchError((error) {
-      showAboutDialog(
-        context: context,
-        applicationName: error.toString(),
-      );
-    });
-  }
-
-  Future<void> getData() async {
-    await KuzzleFlutter.instance.login(const Credentials(LoginStrategy.local,
-        username: 'admin', password: 'admin'));
-    final indexExists = await KuzzleFlutter.instance
-        .existsIndex(KuzzleFlutter.instance.defaultIndex);
-    if (!indexExists) {
-      await KuzzleFlutter.instance
-          .createIndex(KuzzleFlutter.instance.defaultIndex);
-    }
-    collection = KuzzleFlutter.instance.collection('posts');
-    final collectionExists = await collection.exists();
-    if (!collectionExists) {
-      await collection.create();
-    }
-    final docSearch = await collection.search();
-    setState(() {
-      documents = docSearch.hits
-          .map((document) => Post.fromDocument(document))
-          .toList();
-    });
-    room = await collection.subscribe((data) {
-      final dataObj = data.toObject();
-      if (dataObj is Document) {
-        setState(() {
-          documents.add(Post.fromDocument(dataObj));
-        });
-      }
-    }, scope: RoomScope.all, state: RoomState.done, users: RoomUsersScope.all);
-  }
-
-  Future<void> _incrementCounter() async {
-    await collection.createDocument({
-      'title': 'Post title',
-    });
-  }
+  final TextEditingController hostEditingController =
+      TextEditingController(text: '127.0.0.1');
+  final TextEditingController portEditingController =
+      TextEditingController(text: '7512');
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Posts'),
+          title: const Text('New Server'),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: () => onSaveCallback(Server(hostEditingController.text,
+                  int.parse(portEditingController.text))),
+            )
+          ],
         ),
-        body: Center(
-          child: room == null
-              ? const Text('Loading')
-              : ListView(
-                  children: <Widget>[
-                    Column(
-                      children: documents
-                          .map((document) => ListTile(
-                                title: Text(document.title.toString()),
-                              ))
-                          .toList(),
-                    ),
-                  ],
-                ),
+        body: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              TextFormField(
+                controller: hostEditingController,
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(labelText: 'Host'),
+              ),
+              TextFormField(
+                controller: portEditingController,
+                keyboardType: const TextInputType.numberWithOptions(
+                    signed: true, decimal: false),
+                decoration: const InputDecoration(labelText: 'Port'),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+enum ServerListTileOptions {
+  delete,
+}
+
+class ServersListPage extends StatelessWidget {
+  const ServersListPage(this.servers, this.deleteCallback,
+      {this.onSaveCallback});
+
+  final List<Server> servers;
+  final void Function(Server) deleteCallback;
+  final void Function(Server) onSaveCallback;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Saved servers'),
+        ),
+        body: ListView(
+          children: servers
+              .map((server) =>
+                  ServerListTile(server, () => deleteCallback(server)))
+              .toList(),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: room == null ? null : _incrementCounter,
-          tooltip: 'Increment',
           child: const Icon(Icons.add),
-        ), // This trailing comma makes auto-formatting nicer for build methods.
+          onPressed: () {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => NewServerPage((server) {
+                      Navigator.of(context).pop();
+                      onSaveCallback(server);
+                    })));
+          },
+        ),
+      );
+}
+
+class ServerListTile extends StatelessWidget {
+  const ServerListTile(this.server, this.deleteCallback);
+
+  final Server server;
+  final VoidCallback deleteCallback;
+
+  Future<void> onOpenServer(BuildContext context, Server server) async {
+    await Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => FlutterApp(
+              server: server,
+            )));
+    if (KuzzleFlutter.instance != null) {
+      KuzzleFlutter.instance.disconect();
+      KuzzleFlutter.instance = null;
+    }
+  }
+
+  PopupMenuButton<ServerListTileOptions> _listTilePopup(Server server) =>
+      PopupMenuButton<ServerListTileOptions>(
+        itemBuilder: (context) => <PopupMenuEntry<ServerListTileOptions>>[
+              const PopupMenuItem(
+                child: Text('Delete'),
+                value: ServerListTileOptions.delete,
+              ),
+            ],
+        onSelected: (option) {
+          if (option == ServerListTileOptions.delete) {
+            deleteCallback();
+          }
+        },
+      );
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        title: Text(server.host),
+        onTap: () => onOpenServer(context, server),
+        trailing: _listTilePopup(server),
       );
 }

@@ -2,8 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:kuzzle/kuzzle_dart.dart';
 
 class KuzzleFlutter extends Kuzzle {
-  KuzzleFlutter(String host, {@required String defaultIndex})
-      : super(host, defaultIndex: defaultIndex);
+  KuzzleFlutter(String host, {@required String defaultIndex, int port = 7512})
+      : super(host, defaultIndex: defaultIndex, port: port);
 
   /// Application level instance which can be called
   /// from anywhere in the app and directly used
