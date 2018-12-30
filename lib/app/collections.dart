@@ -29,8 +29,9 @@ class CollectionsPageState extends State<CollectionsPage> {
       setState(() {
         this.collections = collections;
       });
-    } catch (e) {
+    } catch (e, stacktrace) {
       print(e);
+      print(stacktrace);
       showAboutDialog(
         context: context,
         applicationName: e.toString(),

@@ -3,6 +3,7 @@ import 'package:kuzzle/kuzzle_dart.dart';
 
 import '../components/loading.dart';
 import '../redux/instance.dart';
+import '../redux/modules/current/actions.dart';
 import 'indexes.dart';
 
 class LoginPage extends StatefulWidget {
@@ -86,6 +87,12 @@ class _AnonymousLoginPage extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.save),
               onPressed: createAdmin,
+            ),
+            IconButton(
+              icon: const Icon(Icons.exit_to_app),
+              onPressed: () {
+                store.dispatch(ResetCurrent());
+              },
             )
           ],
         ),
@@ -147,6 +154,12 @@ class _AdminLoginPage extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.save),
               onPressed: login,
+            ),
+            IconButton(
+              icon: const Icon(Icons.exit_to_app),
+              onPressed: () {
+                store.dispatch(ResetCurrent());
+              },
             )
           ],
         ),

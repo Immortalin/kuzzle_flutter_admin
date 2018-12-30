@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kuzzle/kuzzle_dart.dart';
 
 import '../redux/instance.dart';
+import '../redux/modules/common/model.dart';
 import '../redux/modules/current/actions.dart';
 import 'collections.dart';
 
@@ -11,8 +12,8 @@ class IndexesPage extends StatefulWidget {
 }
 
 class _IndexesPageState extends State<IndexesPage> {
-  Kuzzle get kuzzle => store.state.current.kuzzle;
-  List<String> indexes = [];
+  KuzzleState get current => store.state.current;
+  Kuzzle get kuzzle => current.kuzzle;
 
   @override
   void initState() {
@@ -23,9 +24,7 @@ class _IndexesPageState extends State<IndexesPage> {
   Future<void> getData() async {
     try {
       final indexes = await kuzzle.listIndexes();
-      setState(() {
-        this.indexes = indexes;
-      });
+      store.dispatch(SetIndexes(indexes));
     } catch (e) {
       print(e);
       showAboutDialog(
@@ -45,7 +44,7 @@ class _IndexesPageState extends State<IndexesPage> {
           title: const Text('Indexes'),
           actions: <Widget>[
             IconButton(
-              icon: const Icon(Icons.remove),
+              icon: const Icon(Icons.exit_to_app),
               onPressed: () {
                 store.dispatch(ResetCurrent());
               },
@@ -53,12 +52,12 @@ class _IndexesPageState extends State<IndexesPage> {
           ],
         ),
         body: Center(
-          child: indexes == null
+          child: current.indexes == null
               ? const Text('Loading')
               : ListView(
                   children: <Widget>[
                     Column(
-                      children: indexes
+                      children: current.indexes
                           .map((index) => IndexListTile(index, getData))
                           .toList(),
                     ),
@@ -66,7 +65,7 @@ class _IndexesPageState extends State<IndexesPage> {
                 ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: indexes == null ? null : _incrementCounter,
+          onPressed: current.indexes == null ? null : _incrementCounter,
           tooltip: 'Add',
           child: const Icon(Icons.add),
         ), // This trailing comma makes auto-formatting nicer for build methods.

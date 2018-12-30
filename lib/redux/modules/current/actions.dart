@@ -15,7 +15,26 @@ class ResetCurrent extends Action<KuzzleState> {
   @override
   KuzzleState mutate([KuzzleState state]) {
     state.kuzzle.disconect();
-    state.kuzzle = null;
     return null;
+  }
+}
+
+class SetIndexes extends Action<KuzzleState> {
+  SetIndexes(this.indexes);
+
+  List<String> indexes;
+
+  @override
+  KuzzleState mutate([KuzzleState state]) {
+    final indexCollections = <String, List<String>>{};
+    for (var index in indexes) {
+      indexCollections.addAll({
+        index: [],
+      });
+    }
+    return state.copyWith(
+      indexes: indexes,
+      indexCollections: indexCollections,
+    );
   }
 }
