@@ -1,13 +1,34 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_redux/flutter_redux.dart';
 
 import 'app/root.dart';
 import 'components/loading.dart';
-import 'helpers/kuzzle_flutter.dart';
-import 'models/server.dart';
 
-void main() => runApp(App());
+import 'redux/instance.dart';
+import 'redux/modules/common/model.dart';
+import 'redux/modules/current/actions.dart';
+import 'redux/modules/servers/actions.dart';
+import 'redux/store.dart';
+
+void main() {
+  try {
+    runApp(
+      StoreProvider<ReduxState>(
+        store: store,
+        child: App(),
+      ),
+    );
+  } catch (e) {
+    runApp(MaterialApp(
+      title: 'Error',
+      home: Scaffold(
+        body: Container(
+          child: Text(e.toString()),
+        ),
+      ),
+    ));
+  }
+}
 
 class App extends StatefulWidget {
   @override
@@ -15,51 +36,12 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  List<Server> servers;
-  SharedPreferences sharedPreferences;
-
-  @override
-  void initState() {
-    super.initState();
-    getServers();
+  void onSave(KuzzleState server) {
+    store.dispatch(AddServer(KuzzleState(server.host, server.port)));
   }
 
-  Future<void> getServers() async {
-    sharedPreferences = await SharedPreferences.getInstance();
-    try {
-      final serverInString = sharedPreferences.get('servers');
-      final serversDynamic = json.decode(serverInString);
-      final servers = serversDynamic
-          .map<Server>((server) => Server.fromMap(server))
-          .toList();
-      setState(() {
-        this.servers = servers;
-      });
-    } catch (e) {
-      print(e);
-      setState(() {
-        servers = [];
-      });
-    }
-  }
-
-  Future<void> saveServers() async {
-    sharedPreferences.setString('servers',
-        json.encode(servers.map((server) => server.toMap()).toList()));
-  }
-
-  void onSave(Server server) {
-    setState(() {
-      servers.add(server);
-    });
-    saveServers();
-  }
-
-  void onDelete(Server server) {
-    setState(() {
-      servers.remove(server);
-    });
-    saveServers();
+  void onDelete(KuzzleState server) {
+    store.dispatch(DeleteServer(server));
   }
 
   @override
@@ -68,24 +50,30 @@ class _AppState extends State<App> {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: servers == null
-            ? LoadingPage()
-            : Container(
-                child: servers.isEmpty
-                    ? NewServerPage(onSave)
-                    : ServersListPage(
-                        servers,
-                        onDelete,
-                        onSaveCallback: onSave,
-                      ),
-              ),
+        home: StoreConnector<ReduxState, ReduxState>(
+          converter: (store) => store.state,
+          builder: (context, state) =>
+              state.rehydrated == false || state.servers == null
+                  ? LoadingPage()
+                  : Container(
+                      child: state.servers.isEmpty
+                          ? NewServerPage(onSave)
+                          : state.current == null
+                              ? ServersListPage(
+                                  state.servers,
+                                  onDelete,
+                                  onSaveCallback: onSave,
+                                )
+                              : FlutterApp(),
+                    ),
+        ),
       );
 }
 
 class NewServerPage extends StatelessWidget {
   NewServerPage(this.onSaveCallback);
 
-  final void Function(Server) onSaveCallback;
+  final void Function(KuzzleState) onSaveCallback;
 
   final TextEditingController hostEditingController =
       TextEditingController(text: '127.0.0.1');
@@ -99,7 +87,8 @@ class NewServerPage extends StatelessWidget {
           actions: <Widget>[
             IconButton(
               icon: const Icon(Icons.save),
-              onPressed: () => onSaveCallback(Server(hostEditingController.text,
+              onPressed: () => onSaveCallback(KuzzleState(
+                  hostEditingController.text,
                   int.parse(portEditingController.text))),
             )
           ],
@@ -134,9 +123,9 @@ class ServersListPage extends StatelessWidget {
   const ServersListPage(this.servers, this.deleteCallback,
       {this.onSaveCallback});
 
-  final List<Server> servers;
-  final void Function(Server) deleteCallback;
-  final void Function(Server) onSaveCallback;
+  final List<KuzzleState> servers;
+  final void Function(KuzzleState) deleteCallback;
+  final void Function(KuzzleState) onSaveCallback;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -162,24 +151,21 @@ class ServersListPage extends StatelessWidget {
       );
 }
 
-class ServerListTile extends StatelessWidget {
+class ServerListTile extends StatefulWidget {
   const ServerListTile(this.server, this.deleteCallback);
 
-  final Server server;
+  final KuzzleState server;
   final VoidCallback deleteCallback;
 
-  Future<void> onOpenServer(BuildContext context, Server server) async {
-    await Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => FlutterApp(
-              server: server,
-            )));
-    if (KuzzleFlutter.instance != null) {
-      KuzzleFlutter.instance.disconect();
-      KuzzleFlutter.instance = null;
-    }
-  }
+  @override
+  ServerListTileState createState() => ServerListTileState();
+}
 
-  PopupMenuButton<ServerListTileOptions> _listTilePopup(Server server) =>
+class ServerListTileState extends State<ServerListTile> {
+  void onOpenServer(BuildContext context, KuzzleState server) =>
+      store.dispatch(SetCurrent(server));
+
+  PopupMenuButton<ServerListTileOptions> _listTilePopup(KuzzleState server) =>
       PopupMenuButton<ServerListTileOptions>(
         itemBuilder: (context) => <PopupMenuEntry<ServerListTileOptions>>[
               const PopupMenuItem(
@@ -189,15 +175,15 @@ class ServerListTile extends StatelessWidget {
             ],
         onSelected: (option) {
           if (option == ServerListTileOptions.delete) {
-            deleteCallback();
+            widget.deleteCallback();
           }
         },
       );
 
   @override
   Widget build(BuildContext context) => ListTile(
-        title: Text(server.host),
-        onTap: () => onOpenServer(context, server),
-        trailing: _listTilePopup(server),
+        title: Text(widget.server.host),
+        onTap: () => onOpenServer(context, widget.server),
+        trailing: _listTilePopup(widget.server),
       );
 }

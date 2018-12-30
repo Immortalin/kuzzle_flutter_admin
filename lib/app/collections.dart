@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'package:kuzzle/kuzzle_dart.dart';
 
-import '../helpers/kuzzle_flutter.dart';
+import '../redux/instance.dart';
 import 'documents.dart';
 
 class CollectionsPage extends StatefulWidget {
@@ -16,6 +15,7 @@ class CollectionsPage extends StatefulWidget {
 
 class CollectionsPageState extends State<CollectionsPage> {
   List<Collection> collections = [];
+  Kuzzle get kuzzle => store.state.current.kuzzle;
 
   @override
   void initState() {
@@ -25,8 +25,7 @@ class CollectionsPageState extends State<CollectionsPage> {
 
   Future<void> getData() async {
     try {
-      final collections =
-          await KuzzleFlutter.instance.listCollections(widget.index);
+      final collections = await kuzzle.listCollections(widget.index);
       setState(() {
         this.collections = collections;
       });
@@ -41,13 +40,13 @@ class CollectionsPageState extends State<CollectionsPage> {
 
   Future<void> _incrementCounter() async {
     // NewCollectionPage
-    await KuzzleFlutter.instance.collection('collection').create();
+    await kuzzle.collection('collection').create();
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Collectiones'),
+          title: const Text('Collections'),
         ),
         body: Center(
           child: collections == null

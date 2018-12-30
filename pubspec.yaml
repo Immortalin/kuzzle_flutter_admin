@@ -20,6 +20,9 @@ dependencies:
     path: ../kuzzle_dart
     # git: git://github.com/prijindal/kuzzle_dart
   redux: any
+  redux_logging: any
+  redux_persist: any
+  redux_persist_flutter: any
   shared_preferences: any
 
   # The following adds the Cupertino Icons font to your application.

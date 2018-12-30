@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kuzzle/kuzzle_dart.dart';
 
-import '../helpers/kuzzle_flutter.dart';
+import '../components/loading.dart';
+import '../redux/instance.dart';
 import 'indexes.dart';
 
 class LoginPage extends StatefulWidget {
@@ -12,6 +13,7 @@ class LoginPage extends StatefulWidget {
 class LoginPageState extends State<LoginPage> {
   bool adminExists;
   bool isLoggedIn = false;
+  bool isLoading = true;
   @override
   void initState() {
     super.initState();
@@ -19,31 +21,34 @@ class LoginPageState extends State<LoginPage> {
   }
 
   Future<void> login() async {
-    final adminExists = await KuzzleFlutter.instance.adminExists();
+    final adminExists = await store.state.current.kuzzle.adminExists();
     setState(() {
       this.adminExists = adminExists;
       isLoggedIn = false;
+      isLoading = false;
     });
   }
 
   @override
-  Widget build(BuildContext context) => isLoggedIn
-      ? IndexesPage()
-      : adminExists
-          ? _AdminLoginPage(
-              onLoginCallback: () {
-                setState(() {
-                  isLoggedIn = true;
-                });
-              },
-            )
-          : _AnonymousLoginPage(
-              onLoginCallback: () {
-                setState(() {
-                  isLoggedIn = true;
-                });
-              },
-            );
+  Widget build(BuildContext context) => isLoading
+      ? LoadingPage()
+      : isLoggedIn
+          ? IndexesPage()
+          : adminExists
+              ? _AdminLoginPage(
+                  onLoginCallback: () {
+                    setState(() {
+                      isLoggedIn = true;
+                    });
+                  },
+                )
+              : _AnonymousLoginPage(
+                  onLoginCallback: () {
+                    setState(() {
+                      isLoggedIn = true;
+                    });
+                  },
+                );
 }
 
 class _AnonymousLoginPage extends StatelessWidget {
@@ -63,8 +68,8 @@ class _AnonymousLoginPage extends StatelessWidget {
       // Create admin
       final credentials = Credentials(LoginStrategy.local,
           username: usernameController.text, password: passwordController.text);
-      await KuzzleFlutter.instance.security.createFirstAdmin(credentials);
-      await KuzzleFlutter.instance.login(credentials);
+      await store.state.current.kuzzle.security.createFirstAdmin(credentials);
+      await store.state.current.kuzzle.login(credentials);
       onLoginCallback();
     }
   }
@@ -129,7 +134,7 @@ class _AdminLoginPage extends StatelessWidget {
   final VoidCallback onLoginCallback;
 
   Future<void> login() async {
-    await KuzzleFlutter.instance.login(Credentials(LoginStrategy.local,
+    await store.state.current.kuzzle.login(Credentials(LoginStrategy.local,
         username: usernameController.text, password: passwordController.text));
     onLoginCallback();
   }
@@ -160,7 +165,7 @@ class _AdminLoginPage extends StatelessWidget {
                 keyboardType: TextInputType.text,
               ),
               RaisedButton(
-                child: Text('Login'),
+                child: const Text('Login'),
                 onPressed: login,
               )
             ],

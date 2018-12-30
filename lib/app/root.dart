@@ -4,34 +4,18 @@ import 'package:kuzzle/kuzzle_dart.dart';
 
 import '../components/error.dart';
 import '../components/loading.dart';
-import '../helpers/kuzzle_flutter.dart';
-import '../models/server.dart';
+
+import '../redux/instance.dart';
 
 import 'indexes.dart';
 import 'login.dart';
 
-class FlutterApp extends StatelessWidget {
-  const FlutterApp({@required this.server, Key key}) : super(key: key);
-
-  final Server server;
-
-  @override
-  Widget build(BuildContext context) => KuzzleApp(
-        kuzzle: KuzzleFlutter(
-          server.host,
-          defaultIndex: 'testfromflutter',
-          port: server.port,
-        ),
-        child: RootContainer(),
-      );
-}
-
-class RootContainer extends StatefulWidget {
+class FlutterApp extends StatefulWidget {
   @override
   RootContainerState createState() => RootContainerState();
 }
 
-class RootContainerState extends State<RootContainer> {
+class RootContainerState extends State<FlutterApp> {
   String _error;
   bool isLoading = true;
   @override
@@ -45,14 +29,15 @@ class RootContainerState extends State<RootContainer> {
       isLoading = true;
     });
     try {
-      await KuzzleFlutter.instance.connect();
-      await KuzzleFlutter.instance.memoryStorage.ping();
+      await store.state.current.kuzzle.connect();
+      await store.state.current.kuzzle.memoryStorage.ping();
     } catch (e) {
       if (e == null || e.toString() == null) {
         setState(() {
           _error = 'Some unknown error occured';
         });
       } else {
+        print(e);
         if (e is ResponseError || e is WebSocketChannelException) {
           setState(() {
             _error = e.message;
@@ -75,8 +60,7 @@ class RootContainerState extends State<RootContainer> {
       ? LoadingPage()
       : (_error != null
           ? ErrorPage(_error)
-          : KuzzleContainer(
-              builder: (context, kuzzle) =>
-                  kuzzle.getJwtToken() == null ? LoginPage() : IndexesPage(),
-            ));
+          : store.state.current.kuzzle.getJwtToken() == null
+              ? LoginPage()
+              : IndexesPage());
 }

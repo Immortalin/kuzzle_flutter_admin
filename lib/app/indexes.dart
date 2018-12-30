@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:kuzzle/kuzzle_dart.dart';
 
-import '../helpers/kuzzle_flutter.dart';
+import '../redux/instance.dart';
+import '../redux/modules/current/actions.dart';
 import 'collections.dart';
 
 class IndexesPage extends StatefulWidget {
@@ -9,6 +11,7 @@ class IndexesPage extends StatefulWidget {
 }
 
 class _IndexesPageState extends State<IndexesPage> {
+  Kuzzle get kuzzle => store.state.current.kuzzle;
   List<String> indexes = [];
 
   @override
@@ -19,7 +22,7 @@ class _IndexesPageState extends State<IndexesPage> {
 
   Future<void> getData() async {
     try {
-      final indexes = await KuzzleFlutter.instance.listIndexes();
+      final indexes = await kuzzle.listIndexes();
       setState(() {
         this.indexes = indexes;
       });
@@ -33,14 +36,21 @@ class _IndexesPageState extends State<IndexesPage> {
   }
 
   Future<void> _incrementCounter() async {
-    await KuzzleFlutter.instance
-        .createIndex(KuzzleFlutter.instance.defaultIndex);
+    await kuzzle.createIndex(kuzzle.defaultIndex);
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Indexes'),
+          actions: <Widget>[
+            IconButton(
+              icon: const Icon(Icons.remove),
+              onPressed: () {
+                store.dispatch(ResetCurrent());
+              },
+            )
+          ],
         ),
         body: Center(
           child: indexes == null
@@ -80,7 +90,8 @@ class IndexListTile extends StatelessWidget {
             )));
   }
 
-  PopupMenuButton<IndexListTileOptions> _listTilePopup(String server) =>
+  PopupMenuButton<IndexListTileOptions> _listTilePopup(
+          BuildContext context, String server) =>
       PopupMenuButton<IndexListTileOptions>(
         itemBuilder: (context) => <PopupMenuEntry<IndexListTileOptions>>[
               const PopupMenuItem(
@@ -90,7 +101,7 @@ class IndexListTile extends StatelessWidget {
             ],
         onSelected: (option) async {
           if (option == IndexListTileOptions.delete) {
-            await KuzzleFlutter.instance.deleteIndex(index);
+            await store.state.current.kuzzle.deleteIndex(index);
             deleteCallback();
           }
         },
@@ -100,6 +111,6 @@ class IndexListTile extends StatelessWidget {
   Widget build(BuildContext context) => ListTile(
         title: Text(index),
         onTap: () => onOpenIndexListTile(context, index),
-        trailing: _listTilePopup(index),
+        trailing: _listTilePopup(context, index),
       );
 }
