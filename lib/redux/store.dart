@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:redux/redux.dart';
 import 'package:redux_logging/redux_logging.dart';
 import 'package:redux_persist/redux_persist.dart';
@@ -10,7 +11,7 @@ import './modules/rehydrated/store.dart';
 import './modules/servers/store.dart';
 
 class ReduxState {
-  ReduxState({this.servers = initServersState, this.current});
+  ReduxState({this.servers = initServersState, this.current, this.rehydrated});
 
   List<KuzzleState> servers = initServersState;
   KuzzleState current;
@@ -63,12 +64,17 @@ ReduxState reducer(ReduxState state, dynamic action) {
 }
 
 Store<ReduxState> initState() {
+  var storage;
+  if (Platform.isAndroid || Platform.isIOS) {
+    storage = FlutterStorage();
+  } else {
+    storage = FileStorage(File('state.json'));
+  }
   final persistor = Persistor<ReduxState>(
-    storage: FlutterStorage(), // Or use other engines
+    storage: storage, // Or use other engines
     serializer: JsonSerializer<ReduxState>(
         ReduxState.fromJson), // Or use other serializers
   );
-
   final store = Store<ReduxState>(
     reducer,
     initialState: ReduxState(),
