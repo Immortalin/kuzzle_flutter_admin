@@ -1,23 +1,47 @@
 import 'dart:async';
+import 'package:flutter_redux/flutter_redux.dart';
 import 'package:flutter/material.dart';
 import 'package:kuzzle/kuzzle_dart.dart';
 
 import '../components/serversubtitle.dart';
 import '../redux/instance.dart';
+import '../redux/modules/current/actions.dart';
+import '../redux/store.dart';
 import 'documents.dart';
 
-class CollectionsPage extends StatefulWidget {
+class CollectionsPage extends StatelessWidget {
   const CollectionsPage({@required this.index, Key key}) : super(key: key);
 
   final String index;
-
   @override
-  CollectionsPageState createState() => CollectionsPageState();
+  Widget build(BuildContext context) =>
+      StoreConnector<ReduxState, Iterable<Collection>>(
+        converter: (store) => (store.state.current.imitationServer
+                .imitationDatabase.db[index].keys as Iterable<String>)
+            .map<Collection>((collectionName) =>
+                store.state.current.collection(collectionName, index: index)),
+        builder: (context, collections) => _CollectionsPage(
+              collections: collections,
+              index: index,
+            ),
+      );
 }
 
-class CollectionsPageState extends State<CollectionsPage> {
-  List<Collection> collections = [];
-  Kuzzle get kuzzle => store.state.current.kuzzle;
+class _CollectionsPage extends StatefulWidget {
+  const _CollectionsPage(
+      {@required this.collections, @required this.index, Key key})
+      : super(key: key);
+
+  final Iterable<Collection> collections;
+  final String index;
+
+  @override
+  _CollectionsPageState createState() => _CollectionsPageState();
+}
+
+class _CollectionsPageState extends State<_CollectionsPage> {
+  Kuzzle get kuzzle => store.state.current;
+  Iterable<Collection> get collections => widget.collections;
 
   @override
   void initState() {
@@ -27,10 +51,9 @@ class CollectionsPageState extends State<CollectionsPage> {
 
   Future<void> getData() async {
     try {
-      final collections = await kuzzle.listCollections(widget.index);
-      setState(() {
-        this.collections = collections;
-      });
+      await kuzzle.listCollections(widget.index);
+      store.dispatch(RefreshCurrent());
+      print(collections);
     } catch (e, stacktrace) {
       print(e);
       print(stacktrace);
@@ -44,6 +67,7 @@ class CollectionsPageState extends State<CollectionsPage> {
   Future<void> _incrementCounter() async {
     // NewCollectionPage
     await kuzzle.collection('collection').create();
+    store.dispatch(RefreshCurrent());
   }
 
   @override

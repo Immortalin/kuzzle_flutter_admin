@@ -1,18 +1,36 @@
+import 'dart:convert';
 import 'package:kuzzle/kuzzle_dart.dart';
+import 'package:kuzzle_imitation/kuzzle_imitation.dart';
 
-class KuzzleState {
+class KuzzleState extends Kuzzle {
   KuzzleState(
-    this.host,
-    this.port, {
-    this.indexes = const [],
-    this.indexCollections = const {},
-    this.collectionDocuments = const {},
-    Kuzzle kuzzle,
-  }) {
-    if (kuzzle == null) {
-      this.kuzzle = Kuzzle(host, port: port, defaultIndex: 'testindex');
-    } else {
-      this.kuzzle = kuzzle;
+    String host,
+    int port, {
+    ImitationServer imitationServer,
+  }) : super(host, port: port, defaultIndex: 'testindex') {
+    imitationServer ??= ImitationServer();
+    this.imitationServer = imitationServer;
+  }
+
+  @override
+  void networkQuery(Map<String, dynamic> body) {
+    super.networkQuery(body);
+    final response = json.decode(imitationServer.transform(json.encode(body)));
+    requestToExpected[body['requestId']] = response;
+  }
+
+  @override
+  void onStreamListen(dynamic message) {
+    super.onStreamListen(message);
+    final jsn = json.decode(message);
+    if (requestToExpected.containsKey(jsn['requestId'])) {
+      compareResults(requestToExpected[jsn['requestId']], jsn);
+    }
+  }
+
+  void compareResults(dynamic expected, dynamic actual) {
+    if (expected['result'] != actual['result']) {
+      imitationServer.updateData(actual);
     }
   }
 
@@ -23,42 +41,21 @@ class KuzzleState {
     return KuzzleState(
       json['host'],
       json['port'],
-      // indexes: json['indexes'],
-      // indexCollections: json['indexCollections'],
-      // collectionDocuments: json['collectionDocuments'],
     );
   }
 
-  String host;
-  int port;
-  Kuzzle kuzzle;
-
-  List<String> indexes;
-  Map<String, List<String>> indexCollections;
-  Map<String, List<dynamic>> collectionDocuments;
-
-  KuzzleState copyWith({
-    List<String> indexes,
-    Map<String, List<String>> indexCollections,
-    Map<String, List<dynamic>> collectionDocuments,
-  }) =>
-      KuzzleState(
+  KuzzleState copyWith() => KuzzleState(
         host,
         port,
-        kuzzle: kuzzle,
-        indexes: indexes != null ? indexes : this.indexes,
-        indexCollections:
-            indexCollections != null ? indexCollections : this.indexCollections,
-        collectionDocuments: collectionDocuments != null
-            ? collectionDocuments
-            : this.collectionDocuments,
+        imitationServer: imitationServer,
       );
+
+  Iterable<String> get indexes => imitationServer.imitationDatabase.db.keys;
+  Map<String, dynamic> requestToExpected = {};
+  ImitationServer imitationServer;
 
   dynamic toJson() => {
         'host': host,
         'port': port,
-        'indexes': indexes,
-        'indexCollections': indexCollections,
-        'collectionDocuments': collectionDocuments,
       };
 }

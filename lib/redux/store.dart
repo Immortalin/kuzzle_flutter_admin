@@ -7,7 +7,6 @@ import 'package:redux_persist_flutter/redux_persist_flutter.dart';
 import './modules/common/actions.dart';
 import './modules/common/model.dart';
 import './modules/current/store.dart';
-import './modules/rehydrated/store.dart';
 import './modules/servers/store.dart';
 
 class ReduxState {
@@ -60,12 +59,12 @@ ReduxState reducer(ReduxState state, dynamic action) {
   }
   state.current = currentReducer(state.current, action);
   state.servers = serversReducer(state.servers, action);
-  state.rehydrated = rehydratedReducer(state.rehydrated, action);
+  state.rehydrated = state.rehydrated;
   return state;
 }
 
 Store<ReduxState> initState() {
-  var storage;
+  StorageEngine storage;
   if (Platform.isAndroid || Platform.isIOS) {
     storage = FlutterStorage();
   } else {

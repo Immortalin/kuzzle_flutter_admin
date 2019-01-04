@@ -30,8 +30,8 @@ class RootContainerState extends State<FlutterApp> {
       isLoading = true;
     });
     try {
-      await store.state.current.kuzzle.connect();
-      await store.state.current.kuzzle.memoryStorage.ping();
+      await store.state.current.connect();
+      await store.state.current.memoryStorage.ping();
     } catch (e) {
       if (e == null || e.toString() == null) {
         setState(() {
@@ -61,7 +61,7 @@ class RootContainerState extends State<FlutterApp> {
       ? LoadingPage()
       : (_error != null
           ? ErrorPage(_error)
-          : store.state.current.kuzzle.getJwtToken() == null
+          : store.state.current.getJwtToken() == null
               ? LoginPage()
               : IndexesPage());
 }

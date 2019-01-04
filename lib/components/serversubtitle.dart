@@ -9,10 +9,8 @@ class ServerSubtitle extends StatelessWidget {
   final String extraText;
 
   @override
-  Widget build(BuildContext context) {
-    return Text(
-      '${current.host}:${current.port} $extraText',
-      style: Theme.of(context).textTheme.subtitle.apply(color: Colors.white),
-    );
-  }
+  Widget build(BuildContext context) => Text(
+        '${current.host}:${current.port} $extraText',
+        style: Theme.of(context).textTheme.subtitle.apply(color: Colors.white),
+      );
 }

@@ -6,7 +6,6 @@ export 'actions.dart';
 final List<Type> _collectionActions = [
   SetCurrent,
   ResetCurrent,
-  SetIndexes,
 ];
 
 KuzzleState currentReducer(KuzzleState state, dynamic action) {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:kuzzle/kuzzle_dart.dart';
 
+import '../components/exiticonbutton.dart';
 import '../components/serversubtitle.dart';
 import '../redux/instance.dart';
 import '../redux/modules/common/model.dart';
@@ -15,7 +16,7 @@ class IndexesPage extends StatefulWidget {
 
 class _IndexesPageState extends State<IndexesPage> {
   KuzzleState get current => store.state.current;
-  Kuzzle get kuzzle => current.kuzzle;
+  Kuzzle get kuzzle => current;
 
   @override
   void initState() {
@@ -25,8 +26,8 @@ class _IndexesPageState extends State<IndexesPage> {
 
   Future<void> getData() async {
     try {
-      final indexes = await kuzzle.listIndexes();
-      store.dispatch(SetIndexes(indexes));
+      await kuzzle.listIndexes();
+      store.dispatch(RefreshCurrent());
     } catch (e) {
       print(e);
       showAboutDialog(
@@ -38,6 +39,7 @@ class _IndexesPageState extends State<IndexesPage> {
 
   Future<void> _incrementCounter() async {
     await kuzzle.createIndex(kuzzle.defaultIndex);
+    store.dispatch(RefreshCurrent());
   }
 
   @override
@@ -46,19 +48,12 @@ class _IndexesPageState extends State<IndexesPage> {
           title: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Indexes'),
+            children: const [
+              Text('Indexes'),
               ServerSubtitle(),
             ],
           ),
-          actions: <Widget>[
-            IconButton(
-              icon: const Icon(Icons.exit_to_app),
-              onPressed: () {
-                store.dispatch(ResetCurrent());
-              },
-            )
-          ],
+          actions: <Widget>[ExitIconButton()],
         ),
         body: Center(
           child: current.indexes == null
@@ -109,7 +104,7 @@ class IndexListTile extends StatelessWidget {
             ],
         onSelected: (option) async {
           if (option == IndexListTileOptions.delete) {
-            await store.state.current.kuzzle.deleteIndex(index);
+            await store.state.current.deleteIndex(index);
             deleteCallback();
           }
         },

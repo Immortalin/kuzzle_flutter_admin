@@ -2,10 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:kuzzle/kuzzle_dart.dart';
 
+import '../components/exiticonbutton.dart';
 import '../components/loading.dart';
 import '../components/serversubtitle.dart';
 import '../redux/instance.dart';
-import '../redux/modules/current/actions.dart';
 import 'indexes.dart';
 
 class LoginPage extends StatefulWidget {
@@ -24,7 +24,7 @@ class LoginPageState extends State<LoginPage> {
   }
 
   Future<void> login() async {
-    final adminExists = await store.state.current.kuzzle.adminExists();
+    final adminExists = await store.state.current.adminExists();
     setState(() {
       this.adminExists = adminExists;
       isLoggedIn = false;
@@ -72,8 +72,8 @@ class _AnonymousLoginPage extends StatelessWidget {
       // Create admin
       final credentials = Credentials(LoginStrategy.local,
           username: usernameController.text, password: passwordController.text);
-      await store.state.current.kuzzle.security.createFirstAdmin(credentials);
-      await store.state.current.kuzzle.login(credentials);
+      await store.state.current.security.createFirstAdmin(credentials);
+      await store.state.current.login(credentials);
       onLoginCallback();
     }
   }
@@ -88,8 +88,8 @@ class _AnonymousLoginPage extends StatelessWidget {
           title: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Admin Login'),
+            children: const [
+              Text('Admin Login'),
               ServerSubtitle(),
             ],
           ),
@@ -98,12 +98,7 @@ class _AnonymousLoginPage extends StatelessWidget {
               icon: const Icon(Icons.save),
               onPressed: createAdmin,
             ),
-            IconButton(
-              icon: const Icon(Icons.exit_to_app),
-              onPressed: () {
-                store.dispatch(ResetCurrent());
-              },
-            )
+            ExitIconButton(),
           ],
         ),
         body: Container(
@@ -151,7 +146,7 @@ class _AdminLoginPage extends StatelessWidget {
   final VoidCallback onLoginCallback;
 
   Future<void> login() async {
-    await store.state.current.kuzzle.login(Credentials(LoginStrategy.local,
+    await store.state.current.login(Credentials(LoginStrategy.local,
         username: usernameController.text, password: passwordController.text));
     onLoginCallback();
   }
@@ -162,8 +157,8 @@ class _AdminLoginPage extends StatelessWidget {
           title: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Admin Login'),
+            children: const [
+              Text('Admin Login'),
               ServerSubtitle(),
             ],
           ),
@@ -172,12 +167,7 @@ class _AdminLoginPage extends StatelessWidget {
               icon: const Icon(Icons.save),
               onPressed: login,
             ),
-            IconButton(
-              icon: const Icon(Icons.exit_to_app),
-              onPressed: () {
-                store.dispatch(ResetCurrent());
-              },
-            )
+            ExitIconButton(),
           ],
         ),
         body: Container(
