@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:kuzzle/kuzzle_dart.dart';
 
+import '../components/serversubtitle.dart';
 import '../redux/instance.dart';
 import 'documents.dart';
 
@@ -48,7 +49,16 @@ class CollectionsPageState extends State<CollectionsPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Collections'),
+          title: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Collections'),
+              ServerSubtitle(
+                extraText: widget.index,
+              ),
+            ],
+          ),
         ),
         body: Center(
           child: collections == null

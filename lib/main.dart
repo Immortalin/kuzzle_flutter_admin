@@ -67,7 +67,7 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) => MaterialApp(
         title: 'Flutter Demo',
         theme: ThemeData(
-          primarySwatch: Colors.blue,
+          primarySwatch: Colors.blueGrey,
         ),
         home: StoreConnector<ReduxState, ReduxState>(
           converter: (store) => store.state,

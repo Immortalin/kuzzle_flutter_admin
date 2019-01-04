@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:kuzzle/kuzzle_dart.dart';
 
+import '../components/serversubtitle.dart';
 import '../redux/instance.dart';
 import '../redux/modules/common/model.dart';
 import '../redux/modules/current/actions.dart';
@@ -42,7 +43,14 @@ class _IndexesPageState extends State<IndexesPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Indexes'),
+          title: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Indexes'),
+              ServerSubtitle(),
+            ],
+          ),
           actions: <Widget>[
             IconButton(
               icon: const Icon(Icons.exit_to_app),

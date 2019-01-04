@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:kuzzle/kuzzle_dart.dart';
 
+import '../components/serversubtitle.dart';
+
 class DocumentsPage extends StatefulWidget {
   const DocumentsPage({@required this.collection, Key key}) : super(key: key);
 
@@ -59,7 +61,17 @@ class DocumentsPageState extends State<DocumentsPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Documents'),
+          title: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Documents'),
+              ServerSubtitle(
+                extraText:
+                    '${widget.collection.index}/${widget.collection.collectionName}',
+              ),
+            ],
+          ),
         ),
         body: Center(
           child: documents == null

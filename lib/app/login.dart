@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:kuzzle/kuzzle_dart.dart';
 
 import '../components/loading.dart';
+import '../components/serversubtitle.dart';
 import '../redux/instance.dart';
 import '../redux/modules/current/actions.dart';
 import 'indexes.dart';
@@ -56,6 +57,7 @@ class LoginPageState extends State<LoginPage> {
 class _AnonymousLoginPage extends StatelessWidget {
   _AnonymousLoginPage({@required this.onLoginCallback, Key key})
       : super(key: key);
+
   final TextEditingController usernameController =
       TextEditingController(text: 'admin');
   final TextEditingController passwordController =
@@ -83,7 +85,14 @@ class _AnonymousLoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Admin Login'),
+          title: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Admin Login'),
+              ServerSubtitle(),
+            ],
+          ),
           actions: <Widget>[
             IconButton(
               icon: const Icon(Icons.save),
@@ -150,7 +159,14 @@ class _AdminLoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Admin Login'),
+          title: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Admin Login'),
+              ServerSubtitle(),
+            ],
+          ),
           actions: <Widget>[
             IconButton(
               icon: const Icon(Icons.save),

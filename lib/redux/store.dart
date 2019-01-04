@@ -11,7 +11,8 @@ import './modules/rehydrated/store.dart';
 import './modules/servers/store.dart';
 
 class ReduxState {
-  ReduxState({this.servers = initServersState, this.current, this.rehydrated});
+  ReduxState(
+      {this.servers = initServersState, this.current, this.rehydrated = false});
 
   List<KuzzleState> servers = initServersState;
   KuzzleState current;
