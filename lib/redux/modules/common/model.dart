@@ -13,10 +13,11 @@ class KuzzleState extends Kuzzle {
   }
 
   @override
-  void networkQuery(Map<String, dynamic> body) {
-    super.networkQuery(body);
-    final response = json.decode(imitationServer.transform(json.encode(body)));
-    requestToExpected[body['requestId']] = response;
+  void networkQuery(RawKuzzleRequest request) {
+    super.networkQuery(request);
+    final response =
+        json.decode(imitationServer.transform(json.encode(request.query)));
+    requestToExpected[request.query['requestId']] = response;
   }
 
   @override

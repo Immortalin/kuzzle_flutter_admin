@@ -73,7 +73,7 @@ class _AnonymousLoginPage extends StatelessWidget {
       final credentials = Credentials(LoginStrategy.local,
           username: usernameController.text, password: passwordController.text);
       await store.state.current.security.createFirstAdmin(credentials);
-      await store.state.current.login(credentials);
+      await store.state.current.auth.login(credentials);
       onLoginCallback();
     }
   }
@@ -146,7 +146,7 @@ class _AdminLoginPage extends StatelessWidget {
   final VoidCallback onLoginCallback;
 
   Future<void> login() async {
-    await store.state.current.login(Credentials(LoginStrategy.local,
+    await store.state.current.auth.login(Credentials(LoginStrategy.local,
         username: usernameController.text, password: passwordController.text));
     onLoginCallback();
   }

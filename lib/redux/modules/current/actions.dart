@@ -14,7 +14,7 @@ class ResetCurrent extends Action<KuzzleState> {
 
   @override
   KuzzleState mutate([KuzzleState state]) {
-    state.disconect();
+    state.disconnect();
     return null;
   }
 }

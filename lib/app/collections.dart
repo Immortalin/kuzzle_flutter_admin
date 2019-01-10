@@ -51,7 +51,7 @@ class _CollectionsPageState extends State<_CollectionsPage> {
 
   Future<void> getData() async {
     try {
-      await kuzzle.listCollections(widget.index);
+      await kuzzle.collection(widget.index).list();
       store.dispatch(RefreshCurrent());
       print(collections);
     } catch (e, stacktrace) {
